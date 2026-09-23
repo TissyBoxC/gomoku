@@ -1,0 +1,128 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'io.github.tissyboxc.gomoku'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    // Use the local JDBC driver directly so offline builds never resolve its POM.
+    implementation fileTree('libs') {
+        include '*.jar'
+    }
+}
+
+application {
+    mainClass = 'io.github.tissyboxc.gomoku.Main'
+}
+
+def appName = 'Gomoku'
+def serverAppName = 'GomokuServer'
+def appVersion = project.version.toString()
+def appMainClass = application.mainClass.get()
+def appImageDir = layout.buildDirectory.dir('package')
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(JavaExec).configureEach {
+    systemProperty 'file.encoding', 'UTF-8'
+}
+
+tasks.named('jar') {
+    manifest {
+        attributes 'Main-Class': appMainClass
+    }
+}
+
+/**
+ * 使用 JDK 21 自带的 jpackage 生成 Windows EXE。
+ *
+ * 生成结果：
+ *   build/package/Gomoku/Gomoku.exe
+ */
+tasks.register('packageExe', Exec) {
+    group = 'distribution'
+    description = '使用 jpackage 生成 Windows EXE'
+    dependsOn tasks.named('build')
+
+    def jarTask = tasks.named('jar').get()
+    def runtimeDir = layout.buildDirectory.dir('package-input')
+    def mysqlDriver = fileTree('libs') {
+        include 'mysql-connector-j-*.jar'
+    }
+
+    doFirst {
+        delete appImageDir
+        delete runtimeDir
+        mkdir runtimeDir
+        copy {
+            from jarTask.archiveFile
+            from mysqlDriver
+            into runtimeDir
+        }
+    }
+
+    commandLine 'jpackage',
+            '--type', 'app-image',
+            '--name', appName,
+            '--dest', appImageDir.get().asFile.absolutePath,
+            '--input', runtimeDir.get().asFile.absolutePath,
+            '--main-jar', jarTask.archiveFile.get().asFile.name,
+            '--main-class', appMainClass,
+            '--app-version', appVersion,
+            '--vendor', 'TissyBoxC',
+            '--description', '网络五子棋'
+}
+
+/**
+ * 生成带控制台窗口的服务器 EXE。
+ *
+ * 生成结果：
+ *   build/package/GomokuServer/GomokuServer.exe
+ */
+tasks.register('packageServerExe', Exec) {
+    group = 'distribution'
+    description = '使用 jpackage 生成服务器 Windows EXE'
+    dependsOn tasks.named('build')
+
+    def jarTask = tasks.named('jar').get()
+    def runtimeDir = layout.buildDirectory.dir('server-package-input')
+    def serverImageDir = layout.buildDirectory.dir('package-server')
+    def mysqlDriver = fileTree('libs') {
+        include 'mysql-connector-j-*.jar'
+    }
+
+    doFirst {
+        delete serverImageDir
+        delete runtimeDir
+        mkdir runtimeDir
+        copy {
+            from jarTask.archiveFile
+            from mysqlDriver
+            into runtimeDir
+        }
+    }
+
+    commandLine 'jpackage',
+            '--type', 'app-image',
+            '--win-console',
+            '--name', serverAppName,
+            '--dest', serverImageDir.get().asFile.absolutePath,
+            '--input', runtimeDir.get().asFile.absolutePath,
+            '--main-jar', jarTask.archiveFile.get().asFile.name,
+            '--main-class', appMainClass,
+            '--app-version', appVersion,
+            '--vendor', 'TissyBoxC',
+            '--description', '网络五子棋服务器',
+            '--arguments', 'server',
+            '--arguments', '9527'
+}

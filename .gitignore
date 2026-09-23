@@ -1,0 +1,57 @@
+# Java build output
+*.class
+*.war
+*.ear
+*.nar
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# Gradle
+.gradle/
+build/
+out/
+target/
+
+# Keep the offline dependencies and Gradle wrapper required to build this project.
+!gradle/wrapper/gradle-wrapper.jar
+!libs/*.jar
+
+# Application output
+replays/*
+!replays/.gitkeep
+
+# IntelliJ IDEA
+.idea/
+*.iml
+!gomoku.iml
+*.ipr
+*.iws
+
+# Eclipse / NetBeans / VS Code
+.classpath
+.factorypath
+.project
+.settings/
+bin/
+nbproject/private/
+.vscode/
+
+# Logs and runtime files
+*.log
+hs_err_pid*
+replay_pid*
+*.lck
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local report files
+面向对象课程设计-小组报告/._2、面向对象程序设计课程设计（实验报告范例）.doc
+面向对象课程设计-小组报告/._《面向对象程序设计课程设计》大纲(2023版).docx
+/面向对象课程设计-小组报告/
+/面向对象课程设计-小组报告
